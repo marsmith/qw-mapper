@@ -1,0 +1,37 @@
+{
+  "name": "qw-mapper",
+  "version": "0.0.1",
+  "description": "Mapping Interface for NY QW data",
+  "main": "webpack.config.js",
+  "scripts": {
+    "webpack:w": "webpack --watch",
+    "webpack-dev-server": "webpack-dev-server",
+    "build": "webpack",
+    "start": "concurrently \"npm run webpack:w\" \"npm run webpack-dev-server\" "
+  },
+  "author": "Martyn J. Smith",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@turf/within": "^3.7.0",
+    "bootstrap": "^3.3.7",
+    "esri-leaflet": "^2.0.4",
+    "jquery": "^3.1.1",
+    "leaflet": "^1.0.1",
+    "toastr": "^2.1.2",
+    "tokml": "^0.4.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.21.0",
+    "babel-loader": "^6.2.4",
+    "concurrently": "^2.0.0",
+    "copy-webpack-plugin": "^4.0.0",
+    "core-js": "^2.4.0",
+    "css-loader": "^0.23.1",
+    "raw-loader": "^0.5.1",
+    "style-loader": "^0.13.1",
+    "url-loader": "^0.5.7",
+    "webpack": "^1.13.3",
+    "webpack-dev-server": "^1.16.2",
+    "webpack-merge": "^0.15.0"
+  }
+}

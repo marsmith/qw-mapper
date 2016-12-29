@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<usgs_nwis>
+ <site>
+  <agency_cd>USGS</agency_cd>
+  <site_no>013104721</site_no>
+  <station_nm>CULVERT FROM EISENHOWER PK. AT EAST MEADOWBROOK CR</station_nm>
+  <dec_lat_va>40.73010090</dec_lat_va>
+  <dec_long_va>-73.58346070</dec_long_va>
+  <coord_acy_cd>S</coord_acy_cd>
+  <dec_lat_long_datum_cd>NAD83</dec_lat_long_datum_cd>
+  <county_cd>059</county_cd>
+  <huc_cd>02030202</huc_cd>
+  <aqfr_cd></aqfr_cd>
+  <well_depth_va></well_depth_va>
+ </site>
+ <site>
+  <agency_cd>USGS</agency_cd>
+  <site_no>403031074141101</site_no>
+  <station_nm>R   143. 1</station_nm>
+  <dec_lat_va>40.50871680</dec_lat_va>
+  <dec_long_va>-74.23597800</dec_long_va>
+  <coord_acy_cd>M</coord_acy_cd>
+  <dec_lat_long_datum_cd>NAD83</dec_lat_long_datum_cd>
+  <county_cd>085</county_cd>
+  <huc_cd></huc_cd>
+  <aqfr_cd></aqfr_cd>
+  <well_depth_va>255</well_depth_va>
+ </site>
+ <site>
+  <agency_cd>USGS</agency_cd>
+  <site_no>403040074144801</site_no>
+  <station_nm>R   131. 1</station_nm>
+  <dec_lat_va>40.51113889</dec_lat_va>
+  <dec_long_va>-74.24686110</dec_long_va>
+  <coord_acy_cd>1</coord_acy_cd>
+  <dec_lat_long_datum_cd>NAD83</dec_lat_long_datum_cd>
+  <county_cd>085</county_cd>
+  <huc_cd>02030104</huc_cd>
+  <aqfr_cd>112HHTM</aqfr_cd>
+  <well_depth_va>69</well_depth_va>
+ </site>
+ <site>
+  <agency_cd>USGS</agency_cd>
+  <site_no>403040074144901</site_no>
+  <station_nm>R   132. 1</station_nm>
+  <dec_lat_va>40.51116667</dec_lat_va>
+  <dec_long_va>-74.24691670</dec_long_va>
+  <coord_acy_cd>1</coord_acy_cd>
+  <dec_lat_long_datum_cd>NAD83</dec_lat_long_datum_cd>
+  <county_cd>085</county_cd>
+  <huc_cd>02030104</huc_cd>
+  <aqfr_cd>112HHTM</aqfr_cd>
+  <well_depth_va>10</well_depth_va>
+ </site>
+</usgs_nwis>

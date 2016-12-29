@@ -1,0 +1,224 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.069,
+          42.398
+        ]
+      },
+      "type": "Feature",
+      "properties": {
+        "SiteName": "SY1016",
+        "SiteNo": "422351077041001",
+        "GeographicalData": {
+          "BedrockGeology": "something1",
+          "SurficialGeology": "something2",
+          "HUC8": "02001023",
+          "County": "Schuyler",
+          "CongressionalDistrict": 12,
+          "LandUse":  [21,22,23]
+        },
+        "GWSIdata": {
+          "WellDepth": 208,
+          "FinishedInMaterial": "something",
+          "WellType": "domestic (vs production)"
+        },
+        "QWdata": [
+          {
+            "record_no": "00301568",
+            "paramaters": [
+              {
+                "paramCode": "02201",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 2.321
+              },
+              {
+                "paramCode": "3441",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 16.11
+              }
+            ]
+          },
+          {
+            "record_no": "00301569",
+            "paramaters": [
+              {
+                "paramCode": "02201",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 4.62
+              },
+              {
+                "paramCode": "09923",
+                "sampleDate": "4/9/2004 12:00PM",
+                "value": 0.78
+              }
+            ]
+          }          
+        ]
+      }
+    },
+    {
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.799961,
+          40.7057
+        ]
+      },
+      "type": "Feature",
+      "properties": {
+        "SiteName": "SN 135",
+        "SiteNo": "424909073591601",
+        "GeographicalData": {
+          "BedrockGeology": "something1",
+          "SurficialGeology": "something3",
+          "HUC8": "02001001",
+          "County": "Genesee",
+          "CongressionalDistrict": 17,
+          "LandUse":  [21,22,23]
+        },
+        "GWSIdata": {
+          "WellDepth": 208,
+          "FinishedInMaterial": "something",
+          "WellType": "domestic (vs production)"
+        },
+        "QWdata": [
+          {
+            "record_no": "00202116",
+            "paramaters": [
+              {
+                "paramCode": "02201",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 9.72
+              },
+              {
+                "paramCode": "09942",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 18.72
+              }
+            ]
+          },
+          {
+            "record_no": "00202162",
+            "paramaters": [
+              {
+                "paramCode": "02201",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 4.62
+              },
+              {
+                "paramCode": "09923",
+                "sampleDate": "4/9/2004 12:00PM",
+                "value": 0.78
+              }
+            ]
+          }          
+        ]
+      }
+    },
+    {
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -75.00114,
+          43.001442
+        ]
+      },
+      "type": "Feature",
+      "properties": {
+        "SiteName": "OE1458",
+        "SiteNo": "432004075105101",
+        "GeographicalData": {
+          "BedrockGeology": "something4",
+          "SurficialGeology": "something2",
+          "HUC8": "02001002",
+          "County": "Albany",
+          "CongressionalDistrict": 23,
+          "LandUse":  [24,90,95]
+        },
+        "GWSIdata": {
+          "WellDepth": 92,
+          "FinishedInMaterial": "something",
+          "WellType": "production"
+        },
+        "QWdata": [
+          {
+            "record_no": "00202125",
+            "paramaters": [
+              {
+                "paramCode": "02201",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 12.122
+              },
+              {
+                "paramCode": "9312",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 5.01
+              }
+            ]
+          },
+          {
+            "record_no": "00202126",
+            "paramaters": [
+              {
+                "paramCode": "12344",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 332.12
+              },
+              {
+                "paramCode": "53455",
+                "sampleDate": "4/9/2004 12:00PM",
+                "value": 1.03
+              }
+            ]
+          },
+          {
+            "record_no": "00202167",
+            "paramaters": [
+              {
+                "paramCode": "02201",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 47.9
+              },
+              {
+                "paramCode": "482",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 22.40
+              }
+            ]
+          },
+          {
+            "record_no": "00202168",
+            "paramaters": [
+              {
+                "paramCode": "997",
+                "sampleDate": "4/5/2002 12:00PM",
+                "value": 0.0312
+              },
+              {
+                "paramCode": "09923",
+                "sampleDate": "4/9/2004 12:00PM",
+                "value": 0.9766
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "development": "Written by Todd Siskin",
+    "city": "Troy",
+    "center": "New York Water Science Center",
+    "zip": "12180",
+    "created": "09/02/16 12:52 PM",
+    "nwishost": "nwisny",
+    "state": "NY",
+    "orgcode": "GELK",
+    "address": "425 Jordan Rd",
+    "description": "QW mapper for NY Water Science Center"
+  }
+}
