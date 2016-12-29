@@ -14,6 +14,7 @@
   "dependencies": {
     "@turf/within": "^3.7.0",
     "bootstrap": "^3.3.7",
+    "bootstrap-select": "^1.12.1",
     "esri-leaflet": "^2.0.4",
     "jquery": "^3.1.1",
     "leaflet": "^1.0.1",

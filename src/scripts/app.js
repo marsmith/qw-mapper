@@ -111,7 +111,7 @@ $( document ).ready(function() {
 	L.control.scale().addTo(map);
 
 	//basemap
-	layer= L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+	layer= L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
 		attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
 		maxZoom: 16
 	}).addTo(map);
@@ -124,7 +124,7 @@ $( document ).ready(function() {
 
 	//createFilterGroups();
 	parseBaseLayers();
-	//loadSites();
+	loadSites();
 	
 	/*  START EVENT HANDLERS */
 	$('#mobile-main-menu').click(function() {
@@ -175,30 +175,43 @@ $( document ).ready(function() {
 		filterSites(filterInfo);
 	});
 
-	$('.geoFilterSelect').change(function(event) {
-		
-		$('#loadingResults').show();
+	$('#geoFilterSelect').on('change', '.selectpicker', function() {
+	//$(document).on('change', '.geoFilterSelect', function() {
+		console.log('test:',$(this).find("option:selected").length)
 
-		var layerID = $('#' + event.target.id + ' :selected').attr('layerID');
-		var value = $('#' + event.target.id + ' :selected').attr('value');
-		var name = $('#' + event.target.id + ' :selected').text();
-		
-		console.log('Dropdown filter selected: ', layerID,value,name);
-		if (layerID.length < 1) {
-			map.graphics.clear();
-			featureLayer.clearSelection();
-			return;
+		//make sure something is selected
+		if ($(this).find("option:selected").length == 0) {
+			resetFilters();
 		}
 
-		mapServer.query().layer(layerID).returnGeometry(true).where("FID = " + value).run(function(error, featureCollection){
-			clipSites(featureCollection);
-		});
+		else {
+			var layerID = $(this).find("option:selected").attr('layerID');
+			var value = $(this).find("option:selected").attr('value');
+			var name = $(this).find("option:selected").text();
+			
+			console.log('Dropdown filter selected: ', layerID,value,name);
+
+			if (layerID) {
+
+				mapServer.query().layer(layerID).returnGeometry(true).where("FID = " + value).run(function(error, featureCollection){
+
+					if (featureCollection.features.length > 0) {
+						clipSites(featureCollection);
+					}
+					else {
+						toastr.error('Error', 'Geometry query did not return any features');
+					}
+				});
+			}
+		}
 	});
 
 	/*  END EVENT HANDLERS */
 });
 
 function resetFilters() {
+	$('.selectpicker').selectpicker('deselectAll');
+
 	resetView();
 
 	var geoJSONlayer = L.geoJSON(sitesGeoJSON, {
@@ -206,7 +219,7 @@ function resetFilters() {
 			return L.circleMarker(latlng, geojsonMarkerOptions);
 		},
 		onEachFeature: function (feature, layer) {
-			layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="http://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
+			layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
 		}
 	});
 
@@ -222,12 +235,12 @@ function parseBaseLayers() {
 		//sub-loop over layers within this groupType
 		$.each(group.layers, function (mapServerName,mapServerDetails) {
 
-			if (mapServerDetails.wimOptions.layerType === 'agisFeature') {	
-				featureLayer = L.esri.featureLayer({url:mapServerDetails.url});
-				//addLayer(group.groupHeading, group.showGroupHeading, layer, mapServerName, mapServerDetails);
-			}
+			// if (mapServerDetails.wimOptions.layerType === 'agisFeature') {	
+			// 	featureLayer = L.esri.featureLayer({url:mapServerDetails.url});
+			// 	//addLayer(group.groupHeading, group.showGroupHeading, layer, mapServerName, mapServerDetails);
+			// }
 
-			else if (mapServerDetails.wimOptions.layerType === 'agisDynamic') {
+			if (mapServerDetails.wimOptions.layerType === 'agisDynamic') {
 				mapServer = L.esri.dynamicMapLayer(mapServerDetails);
 				// addMapLayer(mapServer, mapServerName, mapServerDetails);
 				
@@ -241,26 +254,34 @@ function parseBaseLayers() {
 function setupGeoFilters(layerList) {
 	
 	$.each(layerList, function(index,value) {
+
+		toastr.info(value.layerName, 'Getting geoFilters:');
 		
-		//append a new dropdown
-		$("#geoFilterSelect").append("<h5>" + value.layerName + "</h5><select id='" + value.dropDownID + "' class='form-control geoFilterSelect' style='margin-bottom:10px;'></select>");
-		// $('#filters').append('<select class="form-control NWISselect" id="' + filterName + 'Select"><option selected="selected" value="default">Select a ' + filterName + '</option></select>');
-
 		//execute the query task then populate the dropdown menu with list
-		mapServer.query().layer(value.layerID).returnGeometry(false).fields(value.outFields).where("1=1").run(function(error, featureCollection){
+		mapServer.query().layer(value.layerID).returnGeometry(false).where("1=1").run(function(error, featureCollection){
 
-			var features = featureCollection.features;             
-			for(var i=0; i<features.length;i++){
-				//console.log('adding: ',features[i].properties[value.outFields[0]], 'to the div: ',value.dropDownID);
-				
-				$("#" + value.dropDownID).append( $('<option></option>').attr('layerID',value.layerID).val(features[i].properties[value.outFields[1]]).html(features[i].properties[value.outFields[0]]) );
+			if (featureCollection && featureCollection.features.length > 0) {
+
+				//append a new dropdown
+				$("#geoFilterSelect").append("<select id='" + value.dropDownID + "' class='selectpicker geoFilterSelect' multiple data-selected-text-format='count' data-dropup-auto='false' title='" + value.layerName + "'></select>");
+
+				var features = featureCollection.features;             
+				for(var i=0; i<features.length;i++){
+					//console.log('adding: ',features[i].properties[value.outFields[0]], 'to the div: ',value.dropDownID);
+					
+					$("#" + value.dropDownID).append( $('<option></option>').attr('layerID',value.layerID).val(features[i].properties[value.outFields[1]]).html(features[i].properties[value.outFields[0]]) );
+				}
+				//sort the options list 
+				$("#" + value.dropDownID).html($("#" + value.dropDownID + " option").sort(function (a, b) {
+					return a.text == b.text ? 0 : a.text < b.text ? -1 : 1
+				}))
+				//add the default option
+				//$("#" + value.dropDownID).prepend("<option layerID='' selected='selected'>Select a " + value.layerName + "</option>");
+				$('.selectpicker').selectpicker('refresh');
 			}
-			//sort the options list 
-			$("#" + value.dropDownID).html($("#" + value.dropDownID + " option").sort(function (a, b) {
-				return a.text == b.text ? 0 : a.text < b.text ? -1 : 1
-			}))
-			//add the default option
-			$("#" + value.dropDownID).prepend("<option layerID='' selected='selected'>Select a " + value.layerName + "</option>");
+			else {
+				toastr.error(error.message, 'Error getting geoFilter list for ' + value.layerName);
+			}
 
 		});
 		//break the loop for testing
@@ -293,7 +314,7 @@ function clipSites(polyGeoJSON) {
 					return L.circleMarker(latlng, geojsonMarkerOptions);
 				},
 				onEachFeature: function (feature, layer) {
-					layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="http://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
+					layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
 				}
 			});
 			sitesLayer.addLayer(geoJSONlayer);
@@ -302,7 +323,7 @@ function clipSites(polyGeoJSON) {
 
 		else {
 			toastr.clear();
-			toastr.error('Error', 'No sites to display')
+			toastr.error('Error', 'No sites to display');
 		}	
 	}
 }
@@ -340,7 +361,7 @@ function filterSites(filterInfo) {
 			return L.circleMarker(latlng, geojsonMarkerOptions);
 		},
 		onEachFeature: function (feature, layer) {
-			layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="http://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
+			layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
 		}
 	});
 
@@ -429,7 +450,7 @@ function loadSites() {
 					return L.circleMarker(latlng, geojsonMarkerOptions);
 				},
 				onEachFeature: function (feature, layer) {
-					layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="http://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
+					layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
 				}
 			});
 
@@ -477,7 +498,6 @@ function loadSites2() {
 
 function parseFeatureProperties(properties) {
 	$.each(properties, function( filterCategory, filterData ) {
-		console.log('here', filterCategory, filterData );
 
 		var wellElement = '#' + filterCategory;
 		if (typeof filterData === 'object' && $(wellElement).length == 0) {
@@ -515,8 +535,8 @@ function addFilterOptions(properties) {
 		}
 		
 		// if (properties.countyCode === 'County') {
-		// 	//from here: http://www.census.gov/geo/reference/codes/cou.html
-		// 	//then converted to json: http://www.csvjson.com/csv2json
+		// 	//from here: https://www.census.gov/geo/reference/codes/cou.html
+		// 	//then converted to json: https://www.csvjson.com/csv2json
 		// 	$.getJSON('./countyCodesNY.json', function(data) {
 		// 		$.each(data, function( index, county ) {
 		// 			var elementName = '#' + filterName + 'Select';
@@ -538,22 +558,22 @@ function checkSelectForItem(select,item) {
 	return exists;
 }
 
-
 function createFilterGroups() {
 	$.each(filterGroupList, function(index, filterName) {
 
 		//only county for now
 		if (filterName === 'County') {
-			$('#filters').append('<select class="form-control NWISselect" id="' + filterName + 'Select"><option selected="selected" value="default">Select a ' + filterName + '</option></select>');
-
+			$('#filters').append('<select class="selectpicker NWISselect" multiple id="' + filterName + 'Select"></select>');
+			
 			//county is special case so we need a lookup file with codes, other ones get populated in createSites
 			if (filterName === 'County') {
-				//from here: http://www.census.gov/geo/reference/codes/cou.html
-				//then converted to json: http://www.csvjson.com/csv2json
+				//from here: https://www.census.gov/geo/reference/codes/cou.html
+				//then converted to json: https://www.csvjson.com/csv2json
 				$.getJSON('./countyCodesNY.json', function(data) {
 					$.each(data, function( index, county ) {
 						var elementName = '#' + filterName + 'Select';
 						$(elementName).append($('<option></option>').attr('value',county.CountyCd).attr('stateCounty',county.StateCd + county.CountyCd).text(county.CountyName.replace(' County','')));
+						$('.selectpicker').selectpicker('refresh');
 					});
 				});
 			}
@@ -562,7 +582,7 @@ function createFilterGroups() {
 }
 
 function getQWdata() {
-	//http://stackoverflow.com/questions/35125036/export-leaflet-map-to-geojson
+	//https://stackoverflow.com/questions/35125036/export-leaflet-map-to-geojson
 
 	toastr.info('Getting QW Data...', {timeOut: 0});
 
@@ -894,7 +914,7 @@ function downloadGeoJSON() {
 
 function downloadKML() {
 	//https://github.com/mapbox/tokml
-	//http://gis.stackexchange.com/questions/159344/export-to-kml-option-using-leaflet
+	//https://gis.stackexchange.com/questions/159344/export-to-kml-option-using-leaflet
 	if (sitesLayer.toGeoJSON().features[0]) {
 		var GeoJSON = sitesLayer.toGeoJSON().features[0];
 		var kml = tokml(GeoJSON);
@@ -978,7 +998,6 @@ function setBasemap(baseMap) {
 		map.addLayer(basemapLayerLabels);
 	}
 }
-
 
 function resetView() {
 

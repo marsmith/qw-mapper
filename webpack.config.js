@@ -19,6 +19,7 @@ var common = {
         vendor: [
             'leaflet/dist/leaflet.css',
             'bootstrap/dist/css/bootstrap.css',
+            'bootstrap-select/dist/css/bootstrap-select.css',
             'toastr/build/toastr.css',
             PATHS.src + '/styles/main.css', 
             'leaflet', 
@@ -27,7 +28,8 @@ var common = {
             'bootstrap',
             'toastr',
             'tokml',
-            '@turf/within'
+            '@turf/within',
+            'bootstrap-select'
         ]
     },
     output: {
@@ -49,7 +51,8 @@ var common = {
             'L.esri': 'esri-leaflet',
             'toastr': 'toastr',
             'tokml': 'tokml',
-            'within': '@turf/within'
+            'within': '@turf/within',
+            'bootstrap-select': 'bootstrap-select'
         }),
         
         new webpack.DefinePlugin( {'VERSION': JSON.stringify(pkg.version) }),
