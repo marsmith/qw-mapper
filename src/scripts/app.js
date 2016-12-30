@@ -28,6 +28,7 @@ var geojsonMarkerOptions = {
 	fillOpacity: 0.8
 };
 var geoFilterFlag;
+var parentArray = [];
 
 var layerList = [
 	{layerID: "1", layerName: "NY WSC Sub-district", outFields: ["subdist","FID"],dropDownID: "WSCsubDist"},
@@ -35,27 +36,10 @@ var layerList = [
 	{layerID: "3", layerName: "Assembly District", outFields: ["NAMELSAD","FID","AD_Name"], dropDownID: "AssemDist"},
 	{layerID: "4", layerName: "Congressional District",	outFields: ["NAMELSAD","FID","CD_Name"], dropDownID: "CongDist"},
 	{layerID: "5", layerName: "County",	outFields: ["County_Nam","FID"],dropDownID: "County"},
-	{layerID: "6",layerName: "Hydrologic Unit",	outFields: ["HUC_8","FID","HU_8_Name"],	dropDownID: "HUC8"}	
+	{layerID: "6", layerName: "Hydrologic Unit",	outFields: ["HUC_8","FID","HU_8_Name"],	dropDownID: "HUC8"}	
 ];
 
 var allLayers = [
-    { 
-        "groupHeading": "Filters",
-        "showGroupHeading": false,
-        "includeInLayerList": false,
-        "layers": {
-            "Gages" : {
-                "url": "https://www.sciencebase.gov/arcgis/rest/services/Catalog/56ba63bae4b08d617f6490d2/MapServer/0", 
-				"visible": true, 
-				"opacity": 0.8,
-                "wimOptions": {
-                    "type": "layer",
-                    "layerType": "agisFeature",
-                    "includeInLayerList": true
-                }
-            },
-		}
-	},
     {
         "groupHeading": "Filters",
         "showGroupHeading": true,
@@ -75,20 +59,6 @@ var allLayers = [
         }
     }
 ];
-
-var ny = {
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": {"state":"ny"},
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[[-80.035400390625, 40.455307212131494], [-80.035400390625, 45.19752230305682],[-71.663818359375, 45.19752230305682],[-71.663818359375,40.455307212131494],[-80.035400390625,40.455307212131494]]]
-      }
-    }
-  ]
-}
 
 toastr.options = {
   'positionClass': 'toast-bottom-right',
@@ -175,28 +145,108 @@ $( document ).ready(function() {
 		filterSites(filterInfo);
 	});
 
-	$('#geoFilterSelect').on('change', '.selectpicker', function() {
-	//$(document).on('change', '.geoFilterSelect', function() {
-		console.log('test:',$(this).find("option:selected").length)
+	$('#geoFilterSelect').on('changed.bs.select', function (event, clickedIndex, newValue, oldValue) {
+		console.log('testing if this works',event.target, clickedIndex, newValue, oldValue);
 
-		//make sure something is selected
-		if ($(this).find("option:selected").length == 0) {
-			resetFilters();
+		var parentSelectID = $(event.target).attr('id');
+		var selectArray = $(event.target).find("option:selected");
+		var singleSelectCount = selectArray.length;
+		var currentSelected = $(event.target).find("option")[clickedIndex];
+
+		console.log('current selected: ', currentSelected, parentSelectID )
+
+		if (selectArray.length == 0) {
+			console.log('here',parentSelectID,parentArray)
+			var index = parentArray.indexOf(parentSelectID);
+			if (index > -1) {
+				parentArray.splice(index, 1);
+			}
 		}
 
-		else {
+		//if operation is a deselect, get remaining selected options
+		if (newValue == false) {
 			var layerID = $(this).find("option:selected").attr('layerID');
 			var value = $(this).find("option:selected").attr('value');
-			var name = $(this).find("option:selected").text();
-			
-			console.log('Dropdown filter selected: ', layerID,value,name);
+			var name = $(event.target).find("option:selected").text();
+		}
 
+		//otherwise make a new selection
+		else {
+			var layerID = $(currentSelected).attr('layerID');
+			var value = $(currentSelected).attr('value');
+			var name = $(currentSelected).text();
+		}
+
+
+		console.log('GeoFilter selected: ',name,value,layerID,parentSelectID,singleSelectCount);
+
+		//find how many different selects have options selected
+		$.each($('#geoFilterSelect').find("option:selected"), function (index,value) {
+			var parent = $(value).parent().attr('id');
+			if (parentArray.indexOf(parent) == -1) {
+				parentArray.push(parent);
+			}
+		});
+		console.log('geoselect with selections in:',parentArray);
+		
+
+		//if all in a single select are unselected, reset filters
+		if (singleSelectCount == 0 && parentArray.length == 0) {
+			toastr.info('You just unselected all options, resetting filters', 'Info');
+			//resetFilters();
+		}
+
+		//otherwise do query
+		else {
+
+			//make sure there is a selection
 			if (layerID) {
 
-				mapServer.query().layer(layerID).returnGeometry(true).where("FID = " + value).run(function(error, featureCollection){
+				//single select query
+				var query = "FID = " + value;
 
-					if (featureCollection.features.length > 0) {
-						clipSites(featureCollection);
+				//if this is a multiple selection from the same select, add to current select
+				if (singleSelectCount > 1) {
+
+					//NEW METHOD HERE 'FID IN (1,2,3)'
+					query = $(selectArray).map(function() {
+						return "FID = " + this.value;
+					}).get().join(' or ');	
+				}
+
+				console.log('running quere where:',query);
+				toastr.info(parentSelectID + ' equals ' + name, 'Querying sites where... ');
+
+				mapServer.query().layer(layerID).returnGeometry(true).where(query).run(function(error, clipPolygonGeoJSON){
+
+					//make sure there is a result polygon
+					if (clipPolygonGeoJSON.features.length > 0) {
+
+						//logic here is if there are selections from multiple dropdowns, then
+						//use the currently selected set to do the clip
+						if (parentArray.length > 1) {
+							var inputSitesGeoJSON = sitesLayer.toGeoJSON().features[0];
+							var ptsWithin = clipSites(inputSitesGeoJSON, clipPolygonGeoJSON);
+						}
+
+						//otherwise, use the master list of sites
+						else {
+							var ptsWithin = clipSites(sitesGeoJSON, clipPolygonGeoJSON);
+						}
+
+						if (ptsWithin) {
+							geoFilterFlag = true;
+							drawGeoJSON(ptsWithin)
+						}
+						else {
+							//if no sites returned from clip, unselect this from select
+							console.log('here',currentSelected, $(currentSelected).prop("selected"))
+							$(currentSelected).prop("selected", false);
+							$('.selectpicker').selectpicker('refresh');
+
+						}
+						
+
 					}
 					else {
 						toastr.error('Error', 'Geometry query did not return any features');
@@ -206,26 +256,53 @@ $( document ).ready(function() {
 		}
 	});
 
+	$('#geoFilterSelect').on('change', '.selectpicker', function() {
+	//$(document).on('change', '.geoFilterSelect', function() {
+		
+
+	});
+
 	/*  END EVENT HANDLERS */
 });
 
-function resetFilters() {
-	$('.selectpicker').selectpicker('deselectAll');
+function drawGeoJSON(geoJSON) {
+	//clear current display layer
+	sitesLayer.clearLayers();
 
-	resetView();
-
-	var geoJSONlayer = L.geoJSON(sitesGeoJSON, {
+	var geoJSONlayer = L.geoJson(geoJSON, {
+		// //optional filter input
+		// filter: function(feature, layer) {
+		// 	if (filterInfo.selectName === 'CountySelect') return feature.properties.countyCode === filterInfo.optionValue;
+		// 	if (filterInfo.selectName === 'HUCSelect') return feature.properties.hucCode === filterInfo.optionValue;
+		// 	if (filterInfo.selectName === 'AquiferSelect') return feature.properties.aquiferCode === filterInfo.optionValue;
+		// 	if (filterInfo.selectName === 'WellDepthSelect') return feature.properties.wellDepth === filterInfo.optionValue;
+		// },
 		pointToLayer: function (feature, latlng) {
 			return L.circleMarker(latlng, geojsonMarkerOptions);
 		},
 		onEachFeature: function (feature, layer) {
-			layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
+			//layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
+			var $popupContent = $('<div>', { id: 'popup' });
+
+			$.each(feature.properties, function( index, property ) {
+				$popupContent.append('<b>' + index + ':</b>  ' + property + '</br>')
+			});
+			
+			layer.bindPopup($popupContent.html());
 		}
 	});
-
 	sitesLayer.addLayer(geoJSONlayer);
-	console.log(sitesGeoJSON.features.length, 'sites loaded');
+	map.fitBounds(sitesLayer.getBounds());
+}
 
+function resetFilters() {
+	$('.selectpicker').selectpicker('deselectAll');
+
+	parentArray = [];
+
+	resetView();
+
+	drawGeoJSON(sitesGeoJSON)
 }
 
 function parseBaseLayers() {
@@ -289,43 +366,26 @@ function setupGeoFilters(layerList) {
 	});
 }
 
-function clipSites(polyGeoJSON) {
+function clipSites(inputGeoJSON, polyGeoJSON) {
 
 	//console.log('selected: ', filterInfo);
 	toastr.info('Filtering sites...', {timeOut: 0});
+	
+	//turfjs clip operation
+	var ptsWithin = within(inputGeoJSON , polyGeoJSON);
 
-	//get the first feature and add to map 
-	if(polyGeoJSON.features.length > 0){
-		
-		var inputGeoJSON = sitesLayer.toGeoJSON().features[0];
-		console.log('clip inputs:',inputGeoJSON, polyGeoJSON);
-		var ptsWithin = within(inputGeoJSON , polyGeoJSON);
-		console.log('clip result:',ptsWithin);
+	console.log('clip result features:',ptsWithin.features.length);
 
-		if (ptsWithin.features.length > 0) {
-
-			//clear current display layer
-			sitesLayer.clearLayers();
-
-			geoFilterFlag = true;
-
-			var geoJSONlayer = L.geoJson(ptsWithin, {
-				pointToLayer: function (feature, latlng) {
-					return L.circleMarker(latlng, geojsonMarkerOptions);
-				},
-				onEachFeature: function (feature, layer) {
-					layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
-				}
-			});
-			sitesLayer.addLayer(geoJSONlayer);
-			map.fitBounds(sitesLayer.getBounds());
-		}
-
-		else {
-			toastr.clear();
-			toastr.error('Error', 'No sites to display');
-		}	
+	if (ptsWithin.features.length > 0) {
+		toastr.clear();
+		return ptsWithin;
 	}
+
+	else {
+		toastr.clear();
+		toastr.error('Error', 'No sites to display');
+		return null;
+	}	
 }
 
 function summarizeSites(featureCollection) {
@@ -347,26 +407,8 @@ function filterSites(filterInfo) {
 	//console.log('selected: ', filterInfo);
 	toastr.info('Filtering sites...', {timeOut: 0});
 
-	//clear current display layer
-	sitesLayer.clearLayers();
-
-	var geoJSONlayer = L.geoJson(sitesGeoJSON, {
-		filter: function(feature, layer) {
-			if (filterInfo.selectName === 'CountySelect') return feature.properties.countyCode === filterInfo.optionValue;
-			if (filterInfo.selectName === 'HUCSelect') return feature.properties.hucCode === filterInfo.optionValue;
-			if (filterInfo.selectName === 'AquiferSelect') return feature.properties.aquiferCode === filterInfo.optionValue;
-			if (filterInfo.selectName === 'WellDepthSelect') return feature.properties.wellDepth === filterInfo.optionValue;
-		},
-		pointToLayer: function (feature, latlng) {
-			return L.circleMarker(latlng, geojsonMarkerOptions);
-		},
-		onEachFeature: function (feature, layer) {
-			layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
-		}
-	});
-
-	sitesLayer.addLayer(geoJSONlayer);
-	map.fitBounds(sitesLayer.getBounds());
+	//pass in filter info as optional param
+	drawGeoJSON(siteGeoJSON); //NEED TO UPDATE THIS IF USING
 	toastr.clear();
 }
 
@@ -445,16 +487,8 @@ function loadSites() {
 			toastr.clear();
 			toastr.info('Drawing GeoJSON...', {timeOut: 0});
 		
-			var geoJSONlayer = L.geoJSON(sitesGeoJSON, {
-				pointToLayer: function (feature, latlng) {
-					return L.circleMarker(latlng, geojsonMarkerOptions);
-				},
-				onEachFeature: function (feature, layer) {
-					layer.bindPopup('<b>' + feature.properties.siteID + '</b></br></br>' + feature.properties.siteName + '</br><a href="https://waterdata.usgs.gov/nwis/inventory/?site_no=' + feature.properties.siteID + '" target="_blank">Access Data</a></br></br>');
-				}
-			});
+			drawGeoJSON(sitesGeoJSON);
 
-			sitesLayer.addLayer(geoJSONlayer);
 			console.log(sitesGeoJSON.features.length, 'sites loaded');
 			toastr.clear();
 
@@ -467,32 +501,8 @@ function loadSites() {
 
 function loadSites2() {
 
-	sitesLayer.clearLayers();
-
-	var geojsonMarkerOptions = {
-		radius: 8,
-		fillColor: "#ff7800",
-		color: "#000",
-		weight: 1,
-		opacity: 1,
-		fillOpacity: 0.8
-	};
-		
 	$.getJSON('./siteData.json', function(data) {
-		var sitesGeoJSONlayer = L.geoJSON(data, {
-			pointToLayer: function (feature, latlng) {
-				return L.circleMarker(latlng, geojsonMarkerOptions);
-			},
-			onEachFeature: function (feature, layer) {
-				console.log(feature.properties)
-				layer.bindPopup('<b>Site Name:  </b>' + feature.properties.SiteName +  '</br><b>Site Number:  </b>' + feature.properties.SiteNo);
-
-				//create filters
-				parseFeatureProperties(feature.properties);
-			}
-		});
-
-		sitesLayer.addLayer(sitesGeoJSONlayer);
+		drawGeoJSON(data)
 	});
 }
 
@@ -754,24 +764,7 @@ function getQWdata() {
 						}
 					});
 
-					var geoJSONlayer = L.geoJson(tempGeoJSON, {
-						pointToLayer: function (feature, latlng) {
-							return L.circleMarker(latlng, geojsonMarkerOptions);
-						},
-						onEachFeature: function (feature, layer) {
-							var $popupContent = $('<div>', { id: 'popup' });
-
-							$.each(feature.properties, function( index, property ) {
-								$popupContent.append('<b>' + index + ':</b>  ' + property + '</br>')
-							});
-							
-							layer.bindPopup($popupContent.html());
-						}
-					});
-
-					sitesLayer.addLayer(geoJSONlayer);
-
-					map.fitBounds(sitesLayer.getBounds());
+					drawGeoJSON(tempGeoJSON);
 
 					console.log(tempGeoJSON.features.length, 'sites loaded');
 					toastr.clear();
@@ -847,24 +840,7 @@ function getQWdata() {
 						}
 					});
 
-					var geoJSONlayer = L.geoJson(tempGeoJSON, {
-						pointToLayer: function (feature, latlng) {
-							return L.circleMarker(latlng, geojsonMarkerOptions);
-						},
-						onEachFeature: function (feature, layer) {
-							var $popupContent = $('<div>', { id: 'popup' });
-
-							$.each(feature.properties, function( index, property ) {
-								$popupContent.append('<b>' + index + ':</b>  ' + property + '</br>')
-							});
-							
-							layer.bindPopup($popupContent.html());
-						}
-					});
-
-					sitesLayer.addLayer(geoJSONlayer);
-
-					map.fitBounds(sitesLayer.getBounds());
+					drawGeoJSON(tempGeoJSON)
 
 					console.log(tempGeoJSON.features.length, 'sites loaded');
 					toastr.clear();
